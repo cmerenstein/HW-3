@@ -19,7 +19,7 @@ suppressPackageStartupMessages(library(Quandl))
 Please indicate
 
 * Who you collaborated with: No one
-* Roughly how much time you spent on this HW: 4 hours
+* Roughly how much time you spent on this HW: 6 hours
 * What gave you the most trouble: I missed the lecture(s) on Quandl and lubridate (I was home for a funeral) so I have to learn that better still.
 * Any comments you have: Sorry this isn't finished :( There's a lot going wrong with my thesis so I've just had to be in lab the last two weeks.
 
@@ -217,7 +217,7 @@ q3 <- group_by(q3, artist) %>% summarize(count = n())
 q3 <- top_n(q3, 10, count)
 
 q3$artist <- factor(q3$artist, levels = q3$artist[order(-q3$count)])
-#Thanks Ali for finally showing me how to order my bar charts!
+#I finally figured out how to order bar charts! ("figured out" = looked at Ali's HW1...)
 
 p3 <- ggplot(q3, aes(x = artist, y = count)) + geom_bar(stat="identity")
 p3 <- p3 + theme(axis.text.x = element_text(angle = 45, hjust = 1))

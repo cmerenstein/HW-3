@@ -242,11 +242,49 @@ insight to a foreign currency exchanger.
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df()
+gold <- mutate(gold, type = "gold")
+gold <- mutate(gold, diff = abs(Value - lag(Value)))
+gold <- mutate(gold, date_copy = Date)
+gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" )
+
+gold <- filter(gold, as.numeric(year) >= 2010)
+
+bitcoin <- Quandl("BAVERAGE/USD") %>% tbl_df()
+
+bitcoin <- rename(bitcoin, Value = `24h Average`)
+bitcoin <- mutate(bitcoin, type = "bitcoin")
+bitcoin <- mutate(bitcoin, diff = abs(Value - lag(Value)))
+
+
+both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
+
+ggplot(both, aes(x = Date, y = Value, color = type)) + geom_point()
 ```
 
+> Just looking at the values, they seem similar, but we can look at the day to day difference directly below.
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point()
+```
+
+> In total bitcoin appears less volitile, but this is really just because of an initial period of calm, when the currency was laregely undiscovered. Since the initial boom and bust, the volitility of bitcoin has been pretty on par with that of gold. I'm a bio major; I haven't the faintest idea what this means, but looking at this graph I'd rather have a pile of gold than a stash of bitcoin.
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df()
+gold <- mutate(gold, type = "gold")
+gold <- mutate(gold, diff = abs(Value - lag(Value)))
+gold <- mutate(gold, date_copy = Date)
+gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" )
+
+both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
+
+ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point()
 
 
-
+```
+> In the long run though, gold seems less volitile. It's hard to tell how bitcoin would have done if it were around in the 90s and early 2000s when gold was doing well.
 
 ## Question 5:
 
@@ -261,5 +299,29 @@ cheese <- Quandl("USDANASS/NASS_CHEESEPRODUCTIONMEASUREDINLB") %>%
   tbl_df()
 milk <-  Quandl("USDANASS/NASS_MILKPRODUCTIONMEASUREDINLB") %>% 
   tbl_df()
+
+cheese <- mutate(cheese, type = "cheese")
+milk <- mutate(milk, type = "milk")
+
+both <- rbind(cheese, milk)
+
+ggplot(both, aes(x = Date, y = Value, color = type)) + geom_line()
+```
+> Cheese doesn't really seem to depend on the price of milk. This is surprising, obviously, because milk makes cheese. That said, it takes a few years to make cheese, and so cheese companies always have a lot of cheese that's aging in storage. This probably helps reduce the effect of milk prices, since a spike can be distributed across a few years. 
+
+```{r, echo=FALSE, fig.width=12, fig.height=6}
+
+milk <-  Quandl("USDANASS/NASS_MILKPRODUCTIONMEASUREDINLB") %>% 
+  tbl_df()
+
+milk <- mutate(milk, Value = Value/50)
+
+cheese <- mutate(cheese, type = "cheese")
+milk <- mutate(milk, type = "milk")
+
+both <- rbind(cheese, milk)
+
+ggplot(both, aes(x = Date, y = Value, color = type)) + geom_line()
 ```
 
+> The lack of movement in the cheese prices is partially just a funciton of the scale of each. Cheese is a lot cheaper than milk (at least, in the way this is reported. Presumably that's not true pound-for-point or no one would make cheese). When they're on the same scale (I just divided milk prices by 50), you can see that they do look somewhat similar, especially from 1940 to the mid 60s. It's harder to tell trends when they both start increasing, but some are still noticable, like the spike in year 2000, or in the mid 80s.

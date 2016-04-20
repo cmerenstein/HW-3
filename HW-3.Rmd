@@ -1,6 +1,6 @@
 ---
 title: "MATH 216 Homework 3"
-author: "CARTER \"sorry this isn't finished\" MEREN$TEIN"
+author: "CARTER \"DangeR\" MEREN$TEIN"
 output: html_document
 ---
 
@@ -11,6 +11,7 @@ suppressPackageStartupMessages(library(tidyr))
 
 suppressPackageStartupMessages(library(lubridate))
 suppressPackageStartupMessages(library(Quandl))
+suppressPackageStartupMessages(library(boot))
 ```
 
 
@@ -19,9 +20,9 @@ suppressPackageStartupMessages(library(Quandl))
 Please indicate
 
 * Who you collaborated with: No one
-* Roughly how much time you spent on this HW: 6 hours
-* What gave you the most trouble: I missed the lecture(s) on Quandl and lubridate (I was home for a funeral) so I have to learn that better still.
-* Any comments you have: Sorry this isn't finished :( There's a lot going wrong with my thesis so I've just had to be in lab the last two weeks.
+* Roughly how much time you spent on this HW: 8 hours
+* What gave you the most trouble: Logistic regression. I think I didn't pay enough attention to all the math
+* Any comments you have: I just learned that R version nicknames are all Peanuts references!
 
 
 ## Data
@@ -68,6 +69,8 @@ Using your exploratory data analysis from HW-2, fit a logistic regression to
 predict individual's gender and interpret your results.
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
+profiles <- filter(profiles, !is.na(height))
+
 essays <- select(profiles, contains("essay"))
 
 profiles$has_heels <- profile.has.query(data.frame = essays, query = "heels")
@@ -86,12 +89,13 @@ p1 +
 
 model1 <- glm(is_female ~ height + (has_heels + has_baking), data=profiles, family=binomial())
 
-#summary(model1)
+summary(model1)
 
 b1 <- coefficients(model1)
 #b1
-#1/(1+exp(-(b1[1] + 0*b1[2])))
-#1/(1+exp(-(b1[1] + 1*b1[2])))
+b1[2]
+inv.logit(b1[3])
+inv.logit(b1[4])
 
 p2 <- ggplot(data=profiles, aes(x=height, y=is_female)) +
   xlab("height") + ylab("is female") +
@@ -106,7 +110,7 @@ p2
 #  geom_hline(yintercept=1/(1+exp(-(b1[1] + 1*b1[2]))), col="blue", size=2)
 
 ```
-> The three factors above go into the model, which gives the fitted probabilities graphed below
+> The three factors above go into the model, which gives the fitted probabilities graphed below. The coefficients need to be inverse logit transformed because it's a logistic regression. So having "heels" or "baking" increases your chance of being female 80%! But I don't think that the hieght gets transformed like that too, because it's continuous? The inverse logit of the height coefficient seems way to high to make sense, but the actual coefficient makes sense as each inch decreasing the probability of being female by 0.64%. 
 
 ### b)
 
@@ -185,7 +189,7 @@ jukebox$Week <- as.Date(cut(jukebox$date, breaks = "week"))
 q2 <- jukebox %>% group_by(Week) %>% summarize(n = n())
 #q2
 
-p2 <- ggplot(q2, aes(x = Week, y = n)) + geom_point(stat="identity")
+p2 <- ggplot(q2, aes(x = Week, y = n)) + geom_line(stat="identity")
 p2
 ```
 
@@ -208,8 +212,7 @@ jukebox <- separate(jukebox, col=time, into=c("Hour", "Minute", "Second"), sep =
 
 jukebox <- mutate(jukebox, Hour = as.numeric(Hour))
 
-q3 <- jukebox %>% filter(Hour < 8 ) %>% filter(Month_name == "Sep" || Month_name == "Oct" ||Month_name == "Nov" ||Month_name == "Dec" ||Month_name == "Jan" ||Month_name == "Feb" ||Month_name == "Mar" ||Month_name == "Apr" ||Month_name == "May")
-# there must be a fancier way to do this.
+q3 <- jukebox %>% filter(Hour < 8 ) %>% filter(Month_name %in% c("Sep" , "Oct" , "Nov" , "Dec" , "Jan" , "Feb" , "Mar" , "Apr" , "May"))
 
 q3 <- group_by(q3, artist) %>% summarize(count = n())
 
@@ -242,19 +245,18 @@ insight to a foreign currency exchanger.
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 
-gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df()
-gold <- mutate(gold, type = "gold")
-gold <- mutate(gold, diff = abs(Value - lag(Value)))
-gold <- mutate(gold, date_copy = Date)
-gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" )
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df() %>% 
+  mutate(type = "gold") %>% 
+  mutate( diff = abs(Value - lag(Value))/lag(Value)) %>% 
+  mutate(date_copy = Date)
 
-gold <- filter(gold, as.numeric(year) >= 2010)
+gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" ) %>% 
+  filter(as.numeric(year) >= 2010)
 
-bitcoin <- Quandl("BAVERAGE/USD") %>% tbl_df()
-
-bitcoin <- rename(bitcoin, Value = `24h Average`)
-bitcoin <- mutate(bitcoin, type = "bitcoin")
-bitcoin <- mutate(bitcoin, diff = abs(Value - lag(Value)))
+bitcoin <- Quandl("BAVERAGE/USD") %>% tbl_df() %>% 
+  rename(Value = `24h Average`) %>% 
+  mutate( type = "bitcoin") %>% 
+  mutate(bitcoin, diff = abs(Value - lag(Value))/lag(Value))
 
 
 both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
@@ -272,10 +274,10 @@ ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point()
 > In total bitcoin appears less volitile, but this is really just because of an initial period of calm, when the currency was laregely undiscovered. Since the initial boom and bust, the volitility of bitcoin has been pretty on par with that of gold. I'm a bio major; I haven't the faintest idea what this means, but looking at this graph I'd rather have a pile of gold than a stash of bitcoin.
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
-gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df()
-gold <- mutate(gold, type = "gold")
-gold <- mutate(gold, diff = abs(Value - lag(Value)))
-gold <- mutate(gold, date_copy = Date)
+gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df() %>% 
+    mutate(type = "gold") %>% 
+    mutate(diff = abs(Value - lag(Value))) %>% 
+    mutate(date_copy = Date)
 gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" )
 
 both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
@@ -314,7 +316,7 @@ ggplot(both, aes(x = Date, y = Value, color = type)) + geom_line()
 milk <-  Quandl("USDANASS/NASS_MILKPRODUCTIONMEASUREDINLB") %>% 
   tbl_df()
 
-milk <- mutate(milk, Value = Value/50)
+milk <- mutate(milk, Value = Value/50) # I couldn't figure out what you were getting at with a better transform. swrt and log both don't look good,  nor did other roots.
 
 cheese <- mutate(cheese, type = "cheese")
 milk <- mutate(milk, type = "milk")

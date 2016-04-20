@@ -256,37 +256,37 @@ gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-"
 bitcoin <- Quandl("BAVERAGE/USD") %>% tbl_df() %>% 
   rename(Value = `24h Average`) %>% 
   mutate( type = "bitcoin") %>% 
-  mutate(bitcoin, diff = abs(Value - lag(Value))/lag(Value))
+  mutate(diff = abs(Value - lag(Value))/lag(Value))
 
 
 both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
 
-ggplot(both, aes(x = Date, y = Value, color = type)) + geom_point()
+ggplot(both, aes(x = Date, y = Value, color = type)) + geom_line()
 ```
 
 > Just looking at the values, they seem similar, but we can look at the day to day difference directly below.
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 
-ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point()
+ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point(alpha = 0.3)
 ```
 
-> In total bitcoin appears less volitile, but this is really just because of an initial period of calm, when the currency was laregely undiscovered. Since the initial boom and bust, the volitility of bitcoin has been pretty on par with that of gold. I'm a bio major; I haven't the faintest idea what this means, but looking at this graph I'd rather have a pile of gold than a stash of bitcoin.
+> Initally bicoin is really low priced, so it looks really volitile but this isn't really fair, it's changing really small amounts every day. But then once it gets to be decently high priced it still is way more volitile than gold
 
 ```{r, echo=FALSE, fig.width=12, fig.height=6}
 gold <- Quandl("BUNDESBANK/BBK01_WT5511") %>% tbl_df() %>% 
     mutate(type = "gold") %>% 
-    mutate(diff = abs(Value - lag(Value))) %>% 
+    mutate(diff = abs(Value - lag(Value))/lag(Value)) %>% 
     mutate(date_copy = Date)
 gold <- separate(gold, col= date_copy, into=c("year", "Month", "Day"), sep = "-" )
 
 both <- rbind( select(gold, 1:4), select(bitcoin, 1:2,7:8))
 
-ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point()
+ggplot(both, aes(x = Date, y = diff, color = type)) + geom_point(alpha = 0.3)
 
 
 ```
-> In the long run though, gold seems less volitile. It's hard to tell how bitcoin would have done if it were around in the 90s and early 2000s when gold was doing well.
+> In the long run especially, gold seems less volitile. It's hard to tell how bitcoin would have done if it were around in the 90s and early 2000s when gold was doing well.
 
 ## Question 5:
 
